@@ -16,6 +16,7 @@ const SignIn = lazy(() => import('./pages/SignIn'));
 const SignUp = lazy(() => import('./pages/SignUp'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const POIDetail = lazy(() => import('./pages/POIDetail'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Terms = lazy(() => import('./pages/Terms'));
@@ -54,6 +55,7 @@ function AppContent() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
             <Route
               path="/map"
               element={

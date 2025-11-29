@@ -11,17 +11,20 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 function SignIn() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { showError, showSuccess } = useToast();
+  const { showError, showSuccess, showWarning } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setNeedsVerification(false);
     setLoading(true);
 
     try {
@@ -36,6 +39,13 @@ function SignIn() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Check if email needs verification
+        if (data.requiresVerification) {
+          setNeedsVerification(true);
+          setError(data.error);
+          showWarning('Vérifiez votre email pour vous connecter');
+          return;
+        }
         throw new Error(data.error || 'Connexion échouée');
       }
 
@@ -54,6 +64,32 @@ function SignIn() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setResending(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de l\'envoi');
+      }
+
+      showSuccess('Email de vérification renvoyé !');
+    } catch (err: unknown) {
+      const message = parseApiError(err);
+      showError(message);
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -61,6 +97,34 @@ function SignIn() {
         <p className="auth-subtitle">Bon retour parmi nous !</p>
 
         {error && <div className="error-message">{error}</div>}
+
+        {needsVerification && (
+          <div style={{ 
+            background: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            padding: '1rem', 
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            textAlign: 'center'
+          }}>
+            <p style={{ margin: '0 0 0.5rem 0' }}>Votre email n'est pas encore vérifié.</p>
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resending}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#0066cc',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: '0.9rem'
+              }}
+            >
+              {resending ? 'Envoi en cours...' : 'Renvoyer l\'email de vérification'}
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

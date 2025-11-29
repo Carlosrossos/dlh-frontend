@@ -1,12 +1,12 @@
 /* Burger Button */
 .burger-button {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1001;
-  width: 50px;
-  height: 50px;
-  background: white;
+  top: 7px;
+  right: 16px;
+  z-index: 10000;
+  width: 40px;
+  height: 40px;
+  background: #f5f1ed;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -14,9 +14,9 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
@@ -54,7 +54,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 9998;
   animation: fadeIn 0.3s;
 }
 
@@ -75,9 +75,10 @@
   width: 320px;
   height: 100vh;
   background: white;
-  z-index: 1000;
+  z-index: 9999;
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
   transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -175,10 +176,10 @@
 /* Responsive */
 @media (max-width: 768px) {
   .burger-button {
-    top: 15px;
-    right: 15px;
-    width: 45px;
-    height: 45px;
+    top: 8px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
   }
 
   .burger-menu {

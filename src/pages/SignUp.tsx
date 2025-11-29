@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../utils/errorHandler';
 import './Auth.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+console.log('🔗 API_URL:', API_URL);
 
 function SignUp() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -19,6 +17,7 @@ function SignUp() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,12 +58,9 @@ function SignUp() {
         throw new Error(data.error || 'Inscription échouée');
       }
 
-      // Update auth context
-      login(data.token, data.user);
-      showSuccess('Compte créé avec succès !');
-
-      // Redirect to map
-      navigate('/map');
+      // Show email verification message
+      setEmailSent(true);
+      showSuccess('Vérifiez votre email pour activer votre compte !');
     } catch (err: unknown) {
       const message = parseApiError(err);
       setError(message);
@@ -73,6 +69,27 @@ function SignUp() {
       setLoading(false);
     }
   };
+
+  // Show success message after signup
+  if (emailSent) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <h1>✉️ Vérifiez votre email</h1>
+          <p className="auth-subtitle">Un email de vérification a été envoyé à :</p>
+          <p style={{ fontWeight: 'bold', fontSize: '1.1rem', margin: '1rem 0' }}>
+            {formData.email}
+          </p>
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+            Cliquez sur le lien dans l'email pour activer votre compte.
+          </p>
+          <Link to="/signin" className="btn btn-primary btn-full">
+            Aller à la connexion
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-container">
