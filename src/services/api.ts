@@ -2,6 +2,9 @@ import type { POI } from '../types/POI';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+// Log API URL on startup (helps debug production issues)
+console.log('[API] URL configured:', API_URL);
+
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {
   return localStorage.getItem('token');
@@ -14,6 +17,23 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
   };
+};
+
+// Safe JSON parser with better error handling
+const safeJsonParse = async (response: Response) => {
+  const text = await response.text();
+  
+  if (!text) {
+    console.error('[API] Empty response from server');
+    throw new Error('Le serveur ne répond pas. Réessayez dans quelques secondes.');
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('[API] Invalid JSON response:', text.substring(0, 200));
+    throw new Error('Réponse invalide du serveur');
+  }
 };
 
 // POI API
@@ -36,7 +56,7 @@ export const poiAPI = {
     }
 
     const response = await fetch(`${API_URL}/pois?${params.toString()}`);
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors de la récupération des POIs');
@@ -239,13 +259,14 @@ export const poiAPI = {
 // Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    console.log('[API] Login attempt to:', `${API_URL}/auth/signin`);
+    const response = await fetch(`${API_URL}/auth/signin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
     
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     
     if (!response.ok) {
       throw new Error(data.error || 'Erreur de connexion');
@@ -260,13 +281,14 @@ export const authAPI = {
   },
 
   register: async (name: string, email: string, password: string) => {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    console.log('[API] Register attempt to:', `${API_URL}/auth/signup`);
+    const response = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
     
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     
     if (!response.ok) {
       throw new Error(data.error || 'Erreur lors de l\'inscription');
