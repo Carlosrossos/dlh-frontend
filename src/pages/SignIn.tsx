@@ -6,6 +6,8 @@ import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../utils/errorHandler';
 import './Auth.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 function SignIn() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -23,7 +25,7 @@ function SignIn() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/signin', {
+      const response = await fetch(`${API_URL}/auth/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,6 +5,8 @@ import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../utils/errorHandler';
 import './Auth.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 function ForgotPassword() {
   const { showError, showSuccess } = useToast();
   const [email, setEmail] = useState('');
@@ -18,7 +20,7 @@ function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
