@@ -8,7 +8,7 @@ interface PhotoUploadModalProps {
   onSubmit: (data: { photoUrl?: string; photoFile?: File }) => Promise<void>;
 }
 
-function PhotoUploadModal({ poiId, poiName, onClose, onSubmit }: PhotoUploadModalProps) {
+function PhotoUploadModal({ poiId: _poiId, poiName, onClose, onSubmit }: PhotoUploadModalProps) {
   const [uploadMethod, setUploadMethod] = useState<'url' | 'file'>('file');
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
