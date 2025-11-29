@@ -6,7 +6,6 @@ import { parseApiError } from '../utils/errorHandler';
 import './Auth.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-console.log('🔗 API_URL:', API_URL);
 
 function SignUp() {
   const { showError, showSuccess, showWarning } = useToast();
