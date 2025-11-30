@@ -10,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 function SignUp() {
   const { showError, showSuccess, showWarning } = useToast();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -46,6 +47,7 @@ function SignUp() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name: formData.name,
           email: formData.email,
           password: formData.password,
         }),
@@ -99,6 +101,20 @@ function SignUp() {
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="name">Pseudo</label>
+            <input
+              type="text"
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Votre pseudo (visible par les autres)"
+              required
+              minLength={2}
+              maxLength={30}
+            />
+          </div>
+
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
