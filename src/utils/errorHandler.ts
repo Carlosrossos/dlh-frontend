@@ -37,7 +37,7 @@ export function parseApiError(error: unknown): string {
  * Gère une réponse API et lance une erreur si nécessaire
  */
 export async function handleApiResponse<T>(response: Response): Promise<T> {
-  let data: any;
+  let data: T & { error?: string };
   
   try {
     data = await response.json();

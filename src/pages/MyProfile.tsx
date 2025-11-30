@@ -7,11 +7,19 @@ import './MyProfile.css';
 
 type TabType = 'bookmarks' | 'contributions' | 'stats' | 'settings';
 
+interface ContributionData {
+  name?: string;
+  description?: string;
+  text?: string;
+  photoUrl?: string;
+  [key: string]: unknown;
+}
+
 interface Contribution {
   _id: string;
   type: 'new_poi' | 'comment' | 'photo' | 'edit_poi';
   status: 'pending' | 'approved' | 'rejected';
-  data: any;
+  data: ContributionData;
   poiId?: { name: string; category: string };
   createdAt: string;
   rejectionReason?: string;
@@ -58,7 +66,7 @@ function MyProfile() {
       try {
         setLoadingContributions(true);
         const data = await adminAPI.getUserContributions();
-        setContributions(data);
+        setContributions(data as Contribution[]);
       } catch (error) {
         console.error('Error loading contributions:', error);
       } finally {

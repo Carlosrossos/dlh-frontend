@@ -5,7 +5,7 @@ import POIList from '../components/POIList';
 import LoadingSpinner from '../components/LoadingSpinner';
 import POISkeleton from '../components/POISkeleton';
 import { poiAPI } from '../services/api';
-import type { POI, POICategory } from '../types/POI';
+import type { POI, POICategory, Massif } from '../types/POI';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../utils/errorHandler';
@@ -68,10 +68,10 @@ function Map() {
   const [proposedSpot, setProposedSpot] = useState({
     name: '',
     category: 'Spot' as POICategory,
-    massif: 'Mont Blanc' as const,
+    massif: 'Mont Blanc' as Massif,
     description: '',
     altitude: 1000,
-    sunExposition: 'Sud' as const,
+    sunExposition: 'Sud' as POI['sunExposition'],
     coordinates: { lat: 0, lng: 0 },
     photoUrl: ''
   });
@@ -152,9 +152,9 @@ function Map() {
       setTempLocation(null);
       
       alert('✅ Votre proposition de spot a été soumise et sera examinée par un administrateur.');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error proposing spot:', error);
-      alert('❌ Erreur: ' + error.message);
+      alert('❌ Erreur: ' + (error instanceof Error ? error.message : 'Une erreur est survenue'));
     }
   };
 
@@ -314,7 +314,7 @@ function Map() {
                 <label>Massif</label>
                 <select
                   value={proposedSpot.massif}
-                  onChange={(e) => setProposedSpot(prev => ({ ...prev, massif: e.target.value as any }))}
+                  onChange={(e) => setProposedSpot(prev => ({ ...prev, massif: e.target.value as Massif }))}
                 >
                   <option value="Mont Blanc">Mont Blanc</option>
                   <option value="Vanoise">Vanoise</option>
@@ -343,7 +343,7 @@ function Map() {
                 <label>Exposition</label>
                 <select
                   value={proposedSpot.sunExposition}
-                  onChange={(e) => setProposedSpot(prev => ({ ...prev, sunExposition: e.target.value as any }))}
+                  onChange={(e) => setProposedSpot(prev => ({ ...prev, sunExposition: e.target.value as POI['sunExposition'] }))}
                 >
                   <option value="Nord">Nord</option>
                   <option value="Sud">Sud</option>

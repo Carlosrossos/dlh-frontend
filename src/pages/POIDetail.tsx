@@ -27,7 +27,7 @@ function POIDetail() {
   // Comment state
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<POI['comments']>([]);
   
   // Photo state
   const [showPhotoForm, setShowPhotoForm] = useState(false);
@@ -56,13 +56,18 @@ function POIDetail() {
         const contributions = await adminAPI.getUserContributions();
         
         // Filter pending modifications for this POI
-        const pendingForThisPOI = contributions.filter(
-          (mod: any) => mod.poiId?._id === id && mod.status === 'pending'
+        interface PendingMod {
+          poiId?: { _id: string };
+          status: string;
+          type: string;
+        }
+        const pendingForThisPOI = (contributions as PendingMod[]).filter(
+          (mod) => mod.poiId?._id === id && mod.status === 'pending'
         );
 
-        setHasPendingComment(pendingForThisPOI.some((mod: any) => mod.type === 'comment'));
-        setHasPendingPhoto(pendingForThisPOI.some((mod: any) => mod.type === 'photo'));
-        setHasPendingEdit(pendingForThisPOI.some((mod: any) => mod.type === 'edit_poi'));
+        setHasPendingComment(pendingForThisPOI.some((mod) => mod.type === 'comment'));
+        setHasPendingPhoto(pendingForThisPOI.some((mod) => mod.type === 'photo'));
+        setHasPendingEdit(pendingForThisPOI.some((mod) => mod.type === 'edit_poi'));
       } catch (err) {
         console.error('Error checking pending modifications:', err);
       }
@@ -97,9 +102,9 @@ function POIDetail() {
             console.error('Error fetching bookmarks:', err);
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching POI:', err);
-        setError(err.message || 'Erreur lors du chargement du refuge');
+        setError(err instanceof Error ? err.message : 'Erreur lors du chargement du refuge');
       } finally {
         setLoading(false);
       }
@@ -203,10 +208,10 @@ function POIDetail() {
     if (!id || !poi) return;
 
     // Déterminer quels champs ont changé
-    const changes: any = {};
+    const changes: Partial<POI> = {};
     if (editedPOI.name !== poi.name) changes.name = editedPOI.name;
     if (editedPOI.altitude !== poi.altitude) changes.altitude = editedPOI.altitude;
-    if (editedPOI.sunExposition !== poi.sunExposition) changes.sunExposition = editedPOI.sunExposition;
+    if (editedPOI.sunExposition !== poi.sunExposition) changes.sunExposition = editedPOI.sunExposition as POI['sunExposition'];
     if (editedPOI.description !== poi.description) changes.description = editedPOI.description;
 
     if (Object.keys(changes).length === 0) {

@@ -5,12 +5,26 @@ import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../utils/errorHandler';
 import './Admin.css';
 
+interface ModificationData {
+  name?: string;
+  category?: string;
+  massif?: string;
+  altitude?: number;
+  sunExposition?: string;
+  coordinates?: { lat: number; lng: number };
+  description?: string;
+  photos?: string[];
+  text?: string;
+  photoUrl?: string;
+  [key: string]: string | number | string[] | { lat: number; lng: number } | undefined;
+}
+
 interface PendingModification {
   _id: string;
   type: 'new_poi' | 'comment' | 'photo' | 'edit_poi';
   userId: { name: string; email: string };
   poiId?: { name: string; category: string };
-  data: any;
+  data: ModificationData;
   status: string;
   createdAt: string;
 }
@@ -105,7 +119,7 @@ function Admin() {
 
     try {
       const token = localStorage.getItem('token');
-      const body: any = {};
+      const body: { selectedFields?: string[] } = {};
       
       // Add selectedFields for edit_poi type
       if (modification?.type === 'edit_poi' && selectedFields[id]) {

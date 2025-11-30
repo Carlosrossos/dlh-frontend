@@ -2,8 +2,29 @@ import type { POI } from '../types/POI';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Log API URL on startup (helps debug production issues)
-console.log('[API] URL configured:', API_URL);
+// API Response types
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+interface CreatePOIResponse {
+  success: boolean;
+  message: string;
+  data?: POI;
+}
+
+interface CommentResponse {
+  success: boolean;
+  message: string;
+}
+
+interface PhotoResponse {
+  success: boolean;
+  message: string;
+  photoUrl?: string;
+}
 
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {
@@ -30,8 +51,7 @@ const safeJsonParse = async (response: Response) => {
   
   try {
     return JSON.parse(text);
-  } catch (e) {
-    console.error('[API] Invalid JSON response:', text.substring(0, 200));
+  } catch {
     throw new Error('Réponse invalide du serveur');
   }
 };
@@ -63,7 +83,7 @@ export const poiAPI = {
     }
     
     // Transform _id to id for frontend compatibility
-    return data.data.map((poi: any) => ({
+    return data.data.map((poi: POI & { _id?: string }) => ({
       ...poi,
       id: poi._id || poi.id,
     }));
@@ -98,7 +118,7 @@ export const poiAPI = {
   },
 
   // Create new POI (requires auth)
-  create: async (poiData: Partial<POI>): Promise<any> => {
+  create: async (poiData: Partial<POI>): Promise<CreatePOIResponse> => {
     const response = await fetch(`${API_URL}/pois`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -160,11 +180,11 @@ export const poiAPI = {
     }
     
     // Return array of POI IDs
-    return data.data.map((poi: any) => poi._id || poi.id);
+    return data.data.map((poi: POI & { _id?: string }) => poi._id || poi.id);
   },
 
   // Add comment (requires auth)
-  addComment: async (poiId: string, text: string): Promise<any> => {
+  addComment: async (poiId: string, text: string): Promise<CommentResponse> => {
     const response = await fetch(`${API_URL}/pois/${poiId}/comments`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -181,7 +201,7 @@ export const poiAPI = {
   },
 
   // Add photo URL (requires auth)
-  addPhoto: async (poiId: string, photoUrl: string): Promise<any> => {
+  addPhoto: async (poiId: string, photoUrl: string): Promise<PhotoResponse> => {
     const response = await fetch(`${API_URL}/pois/${poiId}/photos`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -198,7 +218,7 @@ export const poiAPI = {
   },
 
   // Upload photo file (requires auth)
-  uploadPhoto: async (poiId: string, file: File): Promise<any> => {
+  uploadPhoto: async (poiId: string, file: File): Promise<PhotoResponse> => {
     const formData = new FormData();
     formData.append('photo', file);
 
@@ -222,7 +242,7 @@ export const poiAPI = {
   },
 
   // Suggest POI edits (requires auth)
-  suggestEdit: async (poiId: string, changes: any): Promise<any> => {
+  suggestEdit: async (poiId: string, changes: Partial<POI>): Promise<ApiResponse> => {
     const response = await fetch(`${API_URL}/pois/${poiId}/edit`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
@@ -239,7 +259,7 @@ export const poiAPI = {
   },
 
   // Suggest exposition (requires auth) - Legacy
-  suggestExposition: async (poiId: string, sunExposition: string): Promise<any> => {
+  suggestExposition: async (poiId: string, sunExposition: string): Promise<ApiResponse> => {
     const response = await fetch(`${API_URL}/pois/${poiId}/exposition`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
@@ -259,7 +279,6 @@ export const poiAPI = {
 // Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {
-    console.log('[API] Login attempt to:', `${API_URL}/auth/signin`);
     const response = await fetch(`${API_URL}/auth/signin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -281,7 +300,6 @@ export const authAPI = {
   },
 
   register: async (name: string, email: string, password: string) => {
-    console.log('[API] Register attempt to:', `${API_URL}/auth/signup`);
     const response = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -310,7 +328,7 @@ export const authAPI = {
 // Admin API
 export const adminAPI = {
   // Delete a comment from a POI
-  deleteComment: async (poiId: string, commentId: string): Promise<any> => {
+  deleteComment: async (poiId: string, commentId: string): Promise<ApiResponse> => {
     const response = await fetch(`${API_URL}/admin/pois/${poiId}/comments/${commentId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
@@ -326,7 +344,7 @@ export const adminAPI = {
   },
 
   // Get user's contributions
-  getUserContributions: async (): Promise<any[]> => {
+  getUserContributions: async (): Promise<unknown[]> => {
     const response = await fetch(`${API_URL}/admin/user/contributions`, {
       method: 'GET',
       headers: getAuthHeaders(),
