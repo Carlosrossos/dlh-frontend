@@ -67,7 +67,7 @@ function Map() {
 
   const [proposedSpot, setProposedSpot] = useState({
     name: '',
-    category: 'Spot' as POICategory,
+    category: 'Bivouac' as POICategory,
     massif: 'Mont Blanc' as Massif,
     description: '',
     altitude: 1000,
@@ -140,7 +140,7 @@ function Map() {
       // Reset form
       setProposedSpot({
         name: '',
-        category: 'Spot' as POICategory,
+        category: 'Bivouac' as POICategory,
         massif: 'Mont Blanc' as const,
         description: '',
         altitude: 1000,
@@ -222,7 +222,7 @@ function Map() {
             <option value="all">Toutes catégories</option>
             <option value="Cabane">Cabane</option>
             <option value="Refuge">Refuge</option>
-            <option value="Spot">Spot</option>
+            <option value="Bivouac">Bivouac</option>
           </select>
 
           <select
@@ -264,6 +264,9 @@ function Map() {
               ✕
             </button>
           )}
+          <span className="poi-count">
+            {filteredPOIs.length} lieu{filteredPOIs.length > 1 ? 'x' : ''}
+          </span>
         </div>
 
         {/* Propose Spot Button - Only show in map mode */}
@@ -304,7 +307,7 @@ function Map() {
                   value={proposedSpot.category}
                   onChange={(e) => setProposedSpot(prev => ({ ...prev, category: e.target.value as POICategory }))}
                 >
-                  <option value="Spot">Spot</option>
+                  <option value="Bivouac">Bivouac</option>
                   <option value="Cabane">Cabane</option>
                   <option value="Refuge">Refuge</option>
                 </select>

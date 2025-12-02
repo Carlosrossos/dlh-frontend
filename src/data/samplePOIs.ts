@@ -62,7 +62,7 @@ export const samplePOIs: POI[] = [
   {
     id: '3',
     name: 'Spot du Lac Bleu',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Écrins',
     coordinates: {
       lat: 44.9333,
@@ -113,7 +113,7 @@ export const samplePOIs: POI[] = [
   {
     id: '5',
     name: 'Spot Panoramique',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Mercantour',
     coordinates: {
       lat: 44.0833,
@@ -183,7 +183,7 @@ export const samplePOIs: POI[] = [
   {
     id: '8',
     name: 'Spot de la Cascade',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Bauges',
     coordinates: {
       lat: 45.6667,
@@ -226,7 +226,7 @@ export const samplePOIs: POI[] = [
   {
     id: '10',
     name: 'Spot Panorama 360',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Belledonne',
     coordinates: {
       lat: 45.2333,
@@ -295,7 +295,7 @@ export const samplePOIs: POI[] = [
   {
     id: '13',
     name: 'Spot du Lever de Soleil',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Écrins',
     coordinates: {
       lat: 44.9500,
@@ -371,7 +371,7 @@ export const samplePOIs: POI[] = [
   {
     id: '16',
     name: 'Spot des Rochers',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Vercors',
     coordinates: { lat: 45.0200, lng: 5.5600 },
     description: 'Formation rocheuse impressionnante.',
@@ -410,7 +410,7 @@ export const samplePOIs: POI[] = [
   {
     id: '19',
     name: 'Spot Belvédère',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Aravis',
     coordinates: { lat: 45.9100, lng: 6.5100 },
     description: 'Point de vue panoramique.',
@@ -450,7 +450,7 @@ export const samplePOIs: POI[] = [
   {
     id: '22',
     name: 'Spot des Nuages',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Vanoise',
     coordinates: { lat: 45.3200, lng: 6.7400 },
     description: 'Au-dessus des nuages.',
@@ -489,7 +489,7 @@ export const samplePOIs: POI[] = [
   {
     id: '25',
     name: 'Spot Crépuscule',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Mercantour',
     coordinates: { lat: 44.0900, lng: 7.4200 },
     description: 'Idéal pour le coucher de soleil.',
@@ -516,7 +516,7 @@ export const samplePOIs: POI[] = [
   {
     id: '27',
     name: 'Spot Cascade Bleue',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Chartreuse',
     coordinates: { lat: 45.3400, lng: 5.8100 },
     description: 'Cascade d\'eau bleue.',
@@ -555,7 +555,7 @@ export const samplePOIs: POI[] = [
   {
     id: '30',
     name: 'Spot Miroir d\'Eau',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Belledonne',
     coordinates: { lat: 45.2200, lng: 5.9900 },
     description: 'Reflets parfaits.',
@@ -595,7 +595,7 @@ export const samplePOIs: POI[] = [
   {
     id: '33',
     name: 'Spot des Chamois',
-    category: 'Spot',
+    category: 'Bivouac',
     massif: 'Écrins',
     coordinates: { lat: 44.9200, lng: 6.3400 },
     description: 'Observation de la faune.',

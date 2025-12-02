@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Tooltip, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -34,11 +34,13 @@ const createCustomIcon = (category: string, isActive: boolean = false) => {
   const size = 36;
   
   // Choose emoji based on category
-  let emoji = '⛺'; // Default for Spot
+  let emoji = '⛺'; // Default for Bivouac
   if (category === 'Cabane') {
     emoji = '🛖'; // Hut/Cabin
   } else if (category === 'Refuge') {
     emoji = '🏠'; // House for refuge
+  } else if (category === 'Bivouac') {
+    emoji = '⛺'; // Tent for bivouac
   }
 
   return L.divIcon({
@@ -113,7 +115,25 @@ function MapView({ pois, onMapClick, clickMode = 'normal', selectedLocation, foc
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [activePOIId, setActivePOIId] = useState<string | null>(null);
   const [layerMenuExpanded, setLayerMenuExpanded] = useState(false);
+  const layerSelectorRef = useRef<HTMLDivElement>(null);
   const currentLayer = mapLayers[activeLayer];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (layerSelectorRef.current && !layerSelectorRef.current.contains(event.target as Node)) {
+        setLayerMenuExpanded(false);
+      }
+    };
+
+    if (layerMenuExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [layerMenuExpanded]);
   
   // Find focused POI
   const focusedPOI = focusedPOIId ? pois.find(p => p.id === focusedPOIId) || null : null;
@@ -139,16 +159,38 @@ function MapView({ pois, onMapClick, clickMode = 'normal', selectedLocation, foc
 
   return (
     <div className="map-wrapper">
-      <div className={`layer-controls ${layerMenuExpanded ? 'expanded' : ''}`}>
-        {(Object.keys(mapLayers) as LayerType[]).map((layerKey) => (
-          <button
-            key={layerKey}
-            className={`layer-btn ${activeLayer === layerKey ? 'active' : ''}`}
-            onClick={() => activeLayer === layerKey ? setLayerMenuExpanded(!layerMenuExpanded) : handleLayerChange(layerKey)}
-          >
-            {mapLayers[layerKey].name}
-          </button>
-        ))}
+      <div className="layer-selector" ref={layerSelectorRef}>
+        <button 
+          className="layer-toggle-btn"
+          onClick={() => setLayerMenuExpanded(!layerMenuExpanded)}
+        >
+          <span className="layer-icon">
+            {activeLayer === 'classic' && '🗺️'}
+            {activeLayer === 'relief' && '⛰️'}
+            {activeLayer === 'satellite' && '🛰️'}
+          </span>
+          <span className="layer-name">{currentLayer.name}</span>
+          <span className={`layer-arrow ${layerMenuExpanded ? 'open' : ''}`}>▼</span>
+        </button>
+        {layerMenuExpanded && (
+          <div className="layer-dropdown">
+            {(Object.keys(mapLayers) as LayerType[]).map((layerKey) => (
+              <button
+                key={layerKey}
+                className={`layer-option ${activeLayer === layerKey ? 'active' : ''}`}
+                onClick={() => handleLayerChange(layerKey)}
+              >
+                <span className="layer-option-icon">
+                  {layerKey === 'classic' && '🗺️'}
+                  {layerKey === 'relief' && '⛰️'}
+                  {layerKey === 'satellite' && '🛰️'}
+                </span>
+                {mapLayers[layerKey].name}
+                {activeLayer === layerKey && <span className="layer-check">✓</span>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <MapContainer

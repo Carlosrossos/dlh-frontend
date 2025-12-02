@@ -1,4 +1,4 @@
-export type POICategory = 'Cabane' | 'Refuge' | 'Spot';
+export type POICategory = 'Cabane' | 'Refuge' | 'Bivouac';
 export type Massif = 'Mont Blanc' | 'Vanoise' | 'Écrins' | 'Queyras' | 'Mercantour' | 'Vercors' | 'Chartreuse' | 'Bauges' | 'Aravis' | 'Belledonne';
 
 export interface POI {

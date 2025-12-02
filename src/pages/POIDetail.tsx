@@ -310,7 +310,7 @@ function POIDetail() {
         return '#8b7355';
       case 'Refuge':
         return '#a0826d';
-      case 'Spot':
+      case 'Bivouac':
         return '#d4a574';
       default:
         return '#8b7355';

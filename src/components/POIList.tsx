@@ -32,7 +32,7 @@ function POIList({ pois }: POIListProps) {
         return '#8b7355';
       case 'Refuge':
         return '#a0826d';
-      case 'Spot':
+      case 'Bivouac':
         return '#d4a574';
       default:
         return '#8b7355';
@@ -45,7 +45,7 @@ function POIList({ pois }: POIListProps) {
         return '🛖';
       case 'Refuge':
         return '🏠';
-      case 'Spot':
+      case 'Bivouac':
         return '⛺';
       default:
         return '';
