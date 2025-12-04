@@ -21,7 +21,6 @@ function Contact() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement email sending
-    console.log('Contact form submitted:', formData);
     setSubmitted(true);
     
     // Reset form after 3 seconds
