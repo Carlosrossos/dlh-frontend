@@ -56,6 +56,39 @@ const safeJsonParse = async (response: Response) => {
   }
 };
 
+// Handle authentication errors (expired/invalid token)
+const handleAuthError = (data: { code?: string; error?: string }) => {
+  if (data.code === 'TOKEN_EXPIRED' || data.code === 'TOKEN_INVALID' || data.code === 'TOKEN_MISSING') {
+    // Clear stored auth data
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Redirect to login page
+    window.location.href = '/signin?expired=true';
+  }
+};
+
+// Fetch with auth error handling - returns parsed JSON
+const fetchWithAuth = async (url: string, options?: RequestInit) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      ...options?.headers,
+    },
+  });
+  
+  const data = await safeJsonParse(response);
+  
+  // Check for auth errors
+  if (response.status === 401) {
+    handleAuthError(data);
+    throw new Error(data.error || 'Non autorisé');
+  }
+  
+  return { response, data };
+};
+
 // POI API
 export const poiAPI = {
   // Get all POIs with optional filters
@@ -135,13 +168,10 @@ export const poiAPI = {
   },
 
   // Toggle like (requires auth)
-  toggleLike: async (poiId: string): Promise<{ likes: number; isLiked: boolean }> => {
-    const response = await fetch(`${API_URL}/pois/${poiId}/like`, {
+  toggleLike: async (poiId: string): Promise<{ isLiked: boolean; likes: number }> => {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/${poiId}/like`, {
       method: 'POST',
-      headers: getAuthHeaders(),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors du like');
@@ -152,12 +182,9 @@ export const poiAPI = {
 
   // Toggle bookmark (requires auth)
   toggleBookmark: async (poiId: string): Promise<{ isBookmarked: boolean; bookmarksCount: number }> => {
-    const response = await fetch(`${API_URL}/pois/${poiId}/bookmark`, {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/${poiId}/bookmark`, {
       method: 'POST',
-      headers: getAuthHeaders(),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors du bookmark');
@@ -168,12 +195,9 @@ export const poiAPI = {
 
   // Get user's bookmarks (requires auth)
   getUserBookmarks: async (): Promise<string[]> => {
-    const response = await fetch(`${API_URL}/pois/user/bookmarks`, {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/user/bookmarks`, {
       method: 'GET',
-      headers: getAuthHeaders(),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors de la récupération des bookmarks');
@@ -185,13 +209,10 @@ export const poiAPI = {
 
   // Add comment (requires auth)
   addComment: async (poiId: string, text: string): Promise<CommentResponse> => {
-    const response = await fetch(`${API_URL}/pois/${poiId}/comments`, {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/${poiId}/comments`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ text }),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors de l\'ajout du commentaire');
@@ -202,13 +223,10 @@ export const poiAPI = {
 
   // Add photo URL (requires auth)
   addPhoto: async (poiId: string, photoUrl: string): Promise<PhotoResponse> => {
-    const response = await fetch(`${API_URL}/pois/${poiId}/photos`, {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/${poiId}/photos`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ photoUrl }),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors de l\'ajout de la photo');
@@ -243,13 +261,10 @@ export const poiAPI = {
 
   // Suggest POI edits (requires auth)
   suggestEdit: async (poiId: string, changes: Partial<POI>): Promise<ApiResponse> => {
-    const response = await fetch(`${API_URL}/pois/${poiId}/edit`, {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/${poiId}/edit`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ changes }),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors de la proposition de modification');
@@ -260,13 +275,10 @@ export const poiAPI = {
 
   // Suggest exposition (requires auth) - Legacy
   suggestExposition: async (poiId: string, sunExposition: string): Promise<ApiResponse> => {
-    const response = await fetch(`${API_URL}/pois/${poiId}/exposition`, {
+    const { data } = await fetchWithAuth(`${API_URL}/pois/${poiId}/exposition`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ sunExposition }),
     });
-    
-    const data = await response.json();
     
     if (!data.success) {
       throw new Error(data.error || 'Erreur lors de la proposition d\'exposition');
@@ -322,6 +334,58 @@ export const authAPI = {
 
   logout: () => {
     localStorage.removeItem('token');
+  },
+
+  updateProfile: async (data: { name?: string; avatar?: string }) => {
+    const response = await fetch(`${API_URL}/auth/profile`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    
+    const result = await safeJsonParse(response);
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Erreur lors de la mise à jour du profil');
+    }
+    
+    return result;
+  },
+
+  getMe: async () => {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      headers: getAuthHeaders(),
+    });
+    
+    const data = await safeJsonParse(response);
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de la récupération du profil');
+    }
+    
+    return data;
+  },
+
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    const token = getAuthToken();
+    const response = await fetch(`${API_URL}/auth/avatar`, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    
+    const result = await safeJsonParse(response);
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Erreur lors de l\'upload de l\'avatar');
+    }
+    
+    return result;
   },
 };
 

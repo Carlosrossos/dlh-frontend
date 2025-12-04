@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { poiAPI, adminAPI } from '../services/api';
+import { poiAPI, adminAPI, authAPI } from '../services/api';
 import type { POI } from '../types/POI';
 import './MyProfile.css';
 
@@ -26,13 +26,23 @@ interface Contribution {
 }
 
 function MyProfile() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('bookmarks');
   const [bookmarks, setBookmarks] = useState<POI[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingContributions, setLoadingContributions] = useState(false);
+  
+  // Profile editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   // Load bookmarks
   useEffect(() => {
@@ -83,6 +93,105 @@ function MyProfile() {
       setBookmarks(bookmarks.filter(poi => poi.id !== poiId));
     } catch (error) {
       console.error('Error removing bookmark:', error);
+    }
+  };
+
+  // Profile editing handlers
+  const handleStartEditing = () => {
+    setEditName(user?.name || '');
+    setEditAvatar(user?.avatar || '');
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setProfileError(null);
+    setIsEditing(true);
+  };
+
+  const handleCancelEditing = () => {
+    setIsEditing(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setProfileError(null);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setProfileError('L\'image ne doit pas dépasser 5 Mo');
+        return;
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setProfileError('Seules les images sont acceptées');
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      setEditAvatar(''); // Clear URL if file is selected
+      setProfileError(null);
+    }
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) return;
+    
+    try {
+      setUploadingAvatar(true);
+      setProfileError(null);
+      
+      const result = await authAPI.uploadAvatar(avatarFile);
+      
+      updateUser({
+        avatar: result.user.avatar,
+      });
+      
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      setEditAvatar(result.user.avatar);
+      
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      setProfileError(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim() || editName.trim().length < 2) {
+      setProfileError('Le nom doit contenir au moins 2 caractères');
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+      setProfileError(null);
+
+      // If there's a file to upload, do it first
+      if (avatarFile) {
+        await handleUploadAvatar();
+      }
+      
+      const result = await authAPI.updateProfile({
+        name: editName.trim(),
+        avatar: editAvatar.trim() || undefined,
+      });
+      
+      // Update local state
+      updateUser({
+        name: result.user.name,
+        avatar: result.user.avatar,
+      });
+      
+      setIsEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setProfileError(error instanceof Error ? error.message : 'Erreur lors de la mise à jour');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -141,7 +250,11 @@ function MyProfile() {
         <div className="profile-header">
           <div className="header-content">
             <div className="user-avatar">
-              {user.name.charAt(0).toUpperCase()}
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="avatar-image" />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="user-info">
               <h1>{user.name}</h1>
@@ -339,24 +452,122 @@ function MyProfile() {
 
           {activeTab === 'settings' && (
             <div className="settings-section">
-              <h2>Paramètres</h2>
+              <h2>Mon Profil</h2>
               <div className="settings-card">
-                <div className="profile-info">
-                  <div className="info-row">
-                    <strong>Nom:</strong>
-                    <span>{user.name}</span>
+                {!isEditing ? (
+                  <>
+                    <div className="profile-info">
+                      <div className="info-row">
+                        <strong>Avatar:</strong>
+                        <span>
+                          {user.avatar ? (
+                            <img src={user.avatar} alt="Avatar" className="mini-avatar" />
+                          ) : (
+                            <span className="no-avatar">Aucun avatar</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="info-row">
+                        <strong>Nom:</strong>
+                        <span>{user.name}</span>
+                      </div>
+                      <div className="info-row">
+                        <strong>Email:</strong>
+                        <span>{user.email}</span>
+                      </div>
+                      <div className="info-row">
+                        <strong>Rôle:</strong>
+                        <span className={`role-badge ${user.role}`}>
+                          {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                        </span>
+                      </div>
+                    </div>
+                    <button onClick={handleStartEditing} className="edit-profile-btn">
+                      ✏️ Modifier mon profil
+                    </button>
+                  </>
+                ) : (
+                  <div className="edit-profile-form">
+                    <h3>Modifier mon profil</h3>
+                    
+                    {profileError && (
+                      <div className="profile-error-msg">{profileError}</div>
+                    )}
+                    
+                    <div className="form-group">
+                      <label>Nom d'utilisateur</label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="Votre nom"
+                        maxLength={50}
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Avatar</label>
+                      
+                      {/* File upload */}
+                      <div className="avatar-upload-section">
+                        <label className="file-upload-btn">
+                          📷 Choisir une image
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                        <span className="file-hint">ou</span>
+                        <input
+                          type="url"
+                          value={editAvatar}
+                          onChange={(e) => {
+                            setEditAvatar(e.target.value);
+                            setAvatarFile(null);
+                            setAvatarPreview(null);
+                          }}
+                          placeholder="Coller une URL"
+                          className="url-input"
+                        />
+                      </div>
+                      
+                      {/* Preview */}
+                      {(avatarPreview || editAvatar) && (
+                        <div className="avatar-preview">
+                          <img 
+                            src={avatarPreview || editAvatar} 
+                            alt="Aperçu" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          {avatarFile && (
+                            <span className="file-name">📎 {avatarFile.name}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="form-actions">
+                      <button 
+                        onClick={handleSaveProfile} 
+                        className="save-btn"
+                        disabled={savingProfile || uploadingAvatar}
+                      >
+                        {savingProfile || uploadingAvatar ? '⏳ Enregistrement...' : '💾 Enregistrer'}
+                      </button>
+                      <button 
+                        onClick={handleCancelEditing} 
+                        className="cancel-btn"
+                        disabled={savingProfile || uploadingAvatar}
+                      >
+                        Annuler
+                      </button>
+                    </div>
                   </div>
-                  <div className="info-row">
-                    <strong>Email:</strong>
-                    <span>{user.email}</span>
-                  </div>
-                  <div className="info-row">
-                    <strong>Rôle:</strong>
-                    <span className={`role-badge ${user.role}`}>
-                      {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Admin Panel Button */}

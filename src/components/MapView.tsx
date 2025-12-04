@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Tooltip, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, Circle, useMapEvents, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import POIModal from './POIModal';
 import type { POI } from '../types/POI';
+import { useGeolocation, calculateDistance, formatDistance } from '../hooks/useGeolocation';
 
 // Component to handle map clicks
 function MapClickHandler({ onMapClick, clickMode }: { onMapClick?: (lat: number, lng: number) => void, clickMode: 'normal' | 'select-location' }) {
@@ -109,14 +110,105 @@ function MapFocusHandler({ poi }: { poi: POI | null }) {
   return null;
 }
 
+// Component to fly to user location
+function FlyToUserLocation({ lat, lng, trigger }: { lat: number; lng: number; trigger: number }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (trigger > 0) {
+      map.flyTo([lat, lng], 12, {
+        animate: true,
+        duration: 1.5
+      });
+    }
+  }, [trigger, lat, lng, map]);
+  
+  return null;
+}
+
+// User location marker icon - More visible with label
+const userLocationIcon = L.divIcon({
+  className: 'user-location-marker',
+  html: `
+    <div style="
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    ">
+      <div style="
+        background: #4285f4;
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 12px;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        margin-bottom: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ">📍 Vous</div>
+      <div style="
+        position: relative;
+        width: 18px;
+        height: 18px;
+      ">
+        <div style="
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          background: #4285f4;
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(66, 133, 244, 0.5);
+        "></div>
+        <div style="
+          position: absolute;
+          width: 50px;
+          height: 50px;
+          background: rgba(66, 133, 244, 0.25);
+          border: 2px solid rgba(66, 133, 244, 0.4);
+          border-radius: 50%;
+          top: -16px;
+          left: -16px;
+          animation: pulse 2s infinite;
+        "></div>
+      </div>
+    </div>
+  `,
+  iconSize: [60, 50],
+  iconAnchor: [30, 50],
+});
+
 function MapView({ pois, onMapClick, clickMode = 'normal', selectedLocation, focusedPOIId }: MapViewProps) {
   const [searchParams] = useSearchParams();
   const [activeLayer, setActiveLayer] = useState<LayerType>('classic');
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [activePOIId, setActivePOIId] = useState<string | null>(null);
   const [layerMenuExpanded, setLayerMenuExpanded] = useState(false);
+  const [flyTrigger, setFlyTrigger] = useState(0);
   const layerSelectorRef = useRef<HTMLDivElement>(null);
   const currentLayer = mapLayers[activeLayer];
+
+  // Geolocation
+  const { latitude, longitude, loading: geoLoading, error: geoError, requestLocation, isSupported } = useGeolocation();
+  const userLocation = latitude && longitude ? { lat: latitude, lng: longitude } : null;
+
+  // Handle locate me button
+  const handleLocateMe = () => {
+    if (userLocation) {
+      setFlyTrigger(prev => prev + 1);
+    } else {
+      requestLocation();
+    }
+  };
+
+  // Auto fly when location is obtained for the first time
+  useEffect(() => {
+    if (userLocation && flyTrigger === 0) {
+      setFlyTrigger(1);
+    }
+  }, [userLocation]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -193,6 +285,25 @@ function MapView({ pois, onMapClick, clickMode = 'normal', selectedLocation, foc
         )}
       </div>
 
+      {/* Geolocation Button */}
+      {isSupported && (
+        <button
+          className={`locate-me-btn ${geoLoading ? 'loading' : ''} ${userLocation ? 'active' : ''}`}
+          onClick={handleLocateMe}
+          title={userLocation ? 'Centrer sur ma position' : 'Me localiser'}
+          disabled={geoLoading}
+        >
+          {geoLoading ? (
+            <span className="locate-spinner"></span>
+          ) : (
+            <span style={{ fontSize: '24px' }}>🎯</span>
+          )}
+        </button>
+      )}
+      {geoError && (
+        <div className="geo-error-toast">{geoError}</div>
+      )}
+
       <MapContainer
         center={[45.5, 6.5]}
         zoom={8}
@@ -209,6 +320,27 @@ function MapView({ pois, onMapClick, clickMode = 'normal', selectedLocation, foc
 
         {/* Map Focus Handler */}
         <MapFocusHandler poi={focusedPOI} />
+
+        {/* Fly to user location */}
+        {userLocation && (
+          <FlyToUserLocation lat={userLocation.lat} lng={userLocation.lng} trigger={flyTrigger} />
+        )}
+
+        {/* User Location Marker */}
+        {userLocation && (
+          <>
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+              <Tooltip direction="top" offset={[0, -10]} opacity={1}>
+                <span>📍 Vous êtes ici</span>
+              </Tooltip>
+            </Marker>
+            <Circle
+              center={[userLocation.lat, userLocation.lng]}
+              radius={200}
+              pathOptions={{ color: '#4285f4', fillColor: '#4285f4', fillOpacity: 0.08, weight: 2, dashArray: '5, 5' }}
+            />
+          </>
+        )}
 
         {/* Temporary marker for selected location */}
         {selectedLocation && clickMode === 'select-location' && (
@@ -252,6 +384,11 @@ function MapView({ pois, onMapClick, clickMode = 'normal', selectedLocation, foc
                 <div className="tooltip-content">
                   <strong>{poi.name}</strong>
                   <span className="tooltip-category">{poi.category}</span>
+                  {userLocation && (
+                    <span className="tooltip-distance">
+                      📍 {formatDistance(calculateDistance(userLocation.lat, userLocation.lng, poi.coordinates.lat, poi.coordinates.lng))}
+                    </span>
+                  )}
                 </div>
               </Tooltip>
             </Marker>

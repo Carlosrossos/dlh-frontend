@@ -163,11 +163,17 @@
 
 .poi-card-info {
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 10px 15px;
   margin-bottom: 10px;
   font-size: 0.85rem;
   color: #6c757d;
   text-align: left;
+}
+
+.poi-distance {
+  color: #4285f4;
+  font-weight: 500;
 }
 
 .poi-card-description {

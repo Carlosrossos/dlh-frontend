@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MapView from '../components/MapView';
 import POIList from '../components/POIList';
@@ -9,6 +9,7 @@ import type { POI, POICategory, Massif } from '../types/POI';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../utils/errorHandler';
+import { useGeolocation } from '../hooks/useGeolocation';
 import './Map.css';
 
 type ViewMode = 'map' | 'list';
@@ -30,6 +31,10 @@ function Map() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchExpanded, setSearchExpanded] = useState(false);
+
+  // Geolocation
+  const { latitude, longitude } = useGeolocation();
+  const userLocation = latitude && longitude ? { lat: latitude, lng: longitude } : null;
 
   // Fetch POIs from API
   useEffect(() => {
@@ -76,11 +81,13 @@ function Map() {
     photoUrl: ''
   });
 
-  // Filter POIs based on exposition (client-side filter)
-  const filteredPOIs = pois.filter((poi) => {
-    const matchesExposition = selectedExposition === 'all' || poi.sunExposition === selectedExposition;
-    return matchesExposition;
-  });
+  // Filter POIs
+  const filteredPOIs = useMemo(() => {
+    return pois.filter((poi) => {
+      const matchesExposition = selectedExposition === 'all' || poi.sunExposition === selectedExposition;
+      return matchesExposition;
+    });
+  }, [pois, selectedExposition]);
 
   // Check if any filters are active
   const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'all' || selectedExposition !== 'all' || selectedMassif !== 'all';
@@ -487,7 +494,7 @@ function Map() {
           focusedPOIId={focusedPOI || undefined}
         />
       ) : !loading && !error ? (
-        <POIList pois={filteredPOIs} />
+        <POIList pois={filteredPOIs} userLocation={userLocation} />
       ) : null}
     </div>
   );
